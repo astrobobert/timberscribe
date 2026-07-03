@@ -1,0 +1,28 @@
+# Runtime data
+data/jobs.db
+uploads/*
+!uploads/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+.venv/
+venv/
+*.egg-info/
+
+# 3D printer output (sliced from the tracked STLs; regenerate, don't commit)
+*.gcode
+
+# Claude Code workspace config
+.claude/
+
+# Backup / temp
+*.bak
+*.tmp
+*.orig
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,4 @@
+flask>=3.0
+werkzeug>=3.0
+# pigpio is installed system-wide on the Pi — not via pip
+# pip install pigpio   will also work if preferred

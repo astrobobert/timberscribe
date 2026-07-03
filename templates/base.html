@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Timber Scribe{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header>
+  <a href="{{ url_for('main.index') }}" class="site-title">
+    &#9650; Timber Scribe
+  </a>
+  <span id="status-badge" class="badge badge-idle">Idle</span>
+</header>
+
+<main>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="flash flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+</main>
+
+<script>
+// Poll /status every 2s and update the header badge
+(function () {
+  const badge = document.getElementById('status-badge');
+
+  function poll() {
+    fetch('/status')
+      .then(r => r.json())
+      .then(data => {
+        if (data.printing) {
+          badge.textContent = '● ' + (data.timber_id || 'Printing');
+          badge.className = 'badge badge-printing';
+        } else {
+          badge.textContent = 'Idle';
+          badge.className = 'badge badge-idle';
+        }
+      })
+      .catch(() => {
+        badge.textContent = '?';
+        badge.className = 'badge badge-error';
+      });
+  }
+
+  poll();
+  setInterval(poll, 2000);
+})();
+</script>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Timber Scribe — Jobs{% endblock %}
+
+{% block content %}
+
+<section class="upload-section">
+  <h2>Upload .tsj file</h2>
+  <form action="{{ url_for('main.upload') }}" method="post"
+        enctype="multipart/form-data" class="upload-form">
+    <label class="file-label">
+      <input type="file" name="file" accept=".tsj" required>
+      <span>Choose .tsj file</span>
+    </label>
+    <button type="submit" class="btn btn-primary">Upload</button>
+  </form>
+</section>
+
+<section class="job-list-section">
+  <h2>Jobs</h2>
+
+  {% if not jobs %}
+    <p class="empty">No jobs yet — upload a .tsj file to get started.</p>
+  {% else %}
+    <ul class="job-list">
+      {% for job in jobs %}
+      <li class="job-item status-{{ job['status'] }}">
+        <div class="job-main">
+          <span class="job-name">{{ job['timber_id'] }}</span>
+          <span class="job-face">
+            {% if job['selected_face'] %}
+              Face {{ job['selected_face'] }}
+            {% else %}
+              No face selected
+            {% endif %}
+          </span>
+          <span class="job-status badge badge-{{ job['status'] }}">
+            {{ job['status'] }}
+          </span>
+        </div>
+        {% if job['message'] %}
+          <div class="job-message">{{ job['message'] }}</div>
+        {% endif %}
+        <div class="job-actions">
+          <a href="{{ url_for('main.face_select', job_id=job['id']) }}"
+             class="btn btn-sm">Open</a>
+          <a href="{{ url_for('main.delete_job', job_id=job['id']) }}"
+             class="btn btn-sm btn-danger"
+             onclick="return confirm('Delete this job?')">Delete</a>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</section>
+
+{% endblock %}

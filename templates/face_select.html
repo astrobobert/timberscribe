@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}{{ tsj.timber_id }} — Select Face{% endblock %}
+
+{% block content %}
+
+<div class="face-select-page">
+
+  <!-- Timber header -->
+  <div class="timber-header">
+    <h2>{{ tsj.timber_id }}</h2>
+    <span class="timber-dims">
+      {{ "%.2f"|format(tsj.length_in) }}" &times; {{ "%.2f"|format(tsj.width_in) }}"
+      &nbsp;|&nbsp; Face {{ tsj.face.number }}
+      {% if tsj.description %}&nbsp;|&nbsp; {{ tsj.description }}{% endif %}
+    </span>
+  </div>
+
+  <!-- Burn settings -->
+  <form id="print-form"
+        action="{{ url_for('main.print_job', job_id=job['id']) }}"
+        method="post">
+
+    <div class="settings-bar">
+      <label>
+        Feed
+        <input type="number" name="feed" id="feed-input"
+               value="{{ job['feed_in_per_min'] }}"
+               min="1" max="200" step="1">
+        <span class="unit">in/min</span>
+      </label>
+      <label>
+        Power
+        <input type="number" name="power" id="power-input"
+               value="{{ job['laser_power_pct'] }}"
+               min="1" max="100" step="1">
+        <span class="unit">%</span>
+      </label>
+
+      <!-- Hidden: selected face number, updated by JS when radio changes -->
+      <input type="hidden" name="face" id="face-hidden"
+             value="{{ selected }}">
+    </div>
+
+    <!-- 4-face selector -->
+    <div class="face-dialog" id="face-dialog">
+      {% for face in faces %}
+      <div class="face-row {% if face.number == selected %}selected{% endif %}"
+           id="row-{{ face.number }}"
+           onclick="selectFace({{ face.number }})">
+
+        <!-- Radio -->
+        <div class="radio-col">
+          <input type="radio" name="face-radio"
+                 id="r{{ face.number }}"
+                 value="{{ face.number }}"
+                 {% if face.number == selected %}checked{% endif %}
+                 onchange="selectFace({{ face.number }})">
+        </div>
+
+        <!-- Anchor end indicator -->
+        <div class="anchor-col" title="Anchor end — tape hook attaches here">
+          anchor &#8592;
+        </div>
+
+        <!-- Face label -->
+        <div class="face-label-col">
+          <span class="face-num">Face {{ face.number }}</span>
+          {% if not face.has_linework %}
+            <span class="no-lw">no linework</span>
+          {% endif %}
+        </div>
+
+        <!-- SVG preview -->
+        <div class="dxf-wrap" id="svg-{{ face.number }}">
+          {{ face.svg | safe }}
+        </div>
+
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Footer -->
+    <div class="print-footer">
+      <span id="footer-status" class="footer-status">
+        Face {{ selected }} selected
+      </span>
+      <button type="submit" class="btn btn-primary btn-print"
+              id="print-btn">
+        Print face {{ selected }} &#8599;
+      </button>
+    </div>
+
+  </form>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+var currentFace = {{ selected }};
+
+function selectFace(n) {
+  currentFace = n;
+
+  // Update radio
+  document.getElementById('r' + n).checked = true;
+
+  // Update hidden input
+  document.getElementById('face-hidden').value = n;
+
+  // Highlight selected row
+  document.querySelectorAll('.face-row').forEach(function(row) {
+    row.classList.toggle('selected', row.id === 'row-' + n);
+  });
+
+  // Update footer
+  document.getElementById('footer-status').textContent =
+    'Face ' + n + ' selected';
+  document.getElementById('print-btn').textContent =
+    'Print face ' + n + ' \u2197';
+
+  // Save selection to server without full reload
+  fetch("{{ url_for('main.select_face', job_id=job['id']) }}", {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'face=' + n +
+          '&feed=' + document.getElementById('feed-input').value +
+          '&power=' + document.getElementById('power-input').value
+  });
+}
+
+// Also save settings when feed/power inputs change
+['feed-input', 'power-input'].forEach(function(id) {
+  document.getElementById(id).addEventListener('change', function() {
+    selectFace(currentFace);
+  });
+});
+
+// Poll job status while printing
+(function pollJobStatus() {
+  var jobId = "{{ job['id'] }}";
+  var footer = document.getElementById('footer-status');
+
+  function poll() {
+    fetch('/status/' + jobId)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.status === 'printing') {
+          footer.textContent = data.message || 'Printing...';
+          footer.className = 'footer-status printing';
+        } else if (data.status === 'done') {
+          footer.textContent = 'Complete \u2713';
+          footer.className = 'footer-status done';
+        } else if (data.status === 'error') {
+          footer.textContent = 'Error: ' + (data.message || '');
+          footer.className = 'footer-status error';
+        }
+      });
+  }
+
+  setInterval(poll, 2000);
+})();
+</script>
+{% endblock %}
