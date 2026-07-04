@@ -67,7 +67,7 @@ infill ______ , supports ______ .
 |---|---|---|
 | 1 | 17HD48002-24B stepper motor | ✓ |
 | 1 | 42BL4002-24A stepper motor | ✓ |
-| 2 | GT2 10 mm motor pulleys | need tooth count + bore |
+| 2 | GT2 10 mm motor pulleys, 20T, 6 mm bore | ✓ |
 | 2 | GT2 10 mm idler pulleys | need specifications |
 | 1 | GT2 10 mm belt | length TBD |
 | 1 | Belt tensioner | printed — 3-piece, §1 |
