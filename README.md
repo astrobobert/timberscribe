@@ -15,7 +15,8 @@ preview dialog, and drives the laser burn loop.
 AutoCAD plugin's scribe export (`TScribe` / `TScribeAll`) — one file per timber face,
 with profile linework, cut-to-length lines, depth/bevel labels, and peg bores.
 The file format is specified in [TSJ_SPEC.md](TSJ_SPEC.md); `app/tsj_parser.py`
-is its reference validator.
+is its reference validator. Building the sled itself — printed parts, BOM,
+assembly — is covered in [HARDWARE.md](HARDWARE.md).
 
 ---
 
