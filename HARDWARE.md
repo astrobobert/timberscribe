@@ -1,7 +1,7 @@
 # TimberScribe Sled — Hardware Build Guide (Draft v0.1)
 
 The sled is the self-propelled print head: a V-slot frame riding the timber on
-nylon rollers, a gantry carrying a 5 W laser module, driven by an MKS DLC32
+nylon rollers, a gantry carrying a 1.6 W laser module, driven by an MKS DLC32
 controller from a Kobalt 24 V tool battery. This guide covers printing the
 brackets, buying the rest, and putting it together.
 
@@ -30,11 +30,13 @@ the source, re-export the STL, commit both.
 | Float Roller Bracket AB | 1 *(verify)* | Float Roller Bracket A.f3d | |
 | Float Roller Bracket BA | 1 *(verify)* | Float Roller Bracket B.f3d | |
 | Float Roller Bracket BB | 1 *(verify)* | Float Roller Bracket B.f3d | |
-| Gantry to Frame Bracket | 1 *(verify)* | Gantry to Frame Bracket.f3d | |
-| Gantry Limit Switch Bracket | 1 *(verify)* | Gantry Limit Switch Bracket.f3d | |
+| Gantry to Frame Bracket | 2 *(verify)* | Gantry to Frame Bracket.f3d | |
+| Gantry Limit Switch Bracket | 2 *(verify)* | Gantry Limit Switch Bracket.f3d | |
 | Laser Mount | 1 | Laser Mount.f3d | |
 | MKS DLC32 Bracket | 1 | MKS DLC32 Bracket.f3z | |
-| *(no STL yet)* Frame | — | Frame.f3d | Assembly/reference model *(verify role)* |
+
+`Frame.f3d` is the **sled assembly file** — the whole machine modeled
+together. It is not a printed part and has no STL.
 
 Print settings *(fill in what has worked)*: material ______ , layer ______ ,
 infill ______ , supports ______ .
@@ -77,7 +79,7 @@ infill ______ , supports ______ .
 | Qty | Part | Status |
 |---|---|---|
 | 1 | MKS DLC32 V2.1 controller | ✓ |
-| 1 | Creality CV 5 W laser module | ✓ |
+| 1 | Creality CV 1.6 W laser module | ✓ |
 | 1 | Raspberry Pi Zero 2 W (runs the TimberScribe server) | *(verify role vs DLC32 — see §4 note)* |
 | 4 | Limit switches | need switch type |
 | 2 | Stepper motor extension cables | TBD |
@@ -150,7 +152,7 @@ build/teardown.
 
 ## 5. Safety
 
-- 5 W diode laser: **wear the OD-rated goggles for 445 nm — always.** No
+- 1.6 W diode laser: **wear the OD-rated goggles for 445 nm — always.** No
   eyes at timber level during a burn; the beam scatters off wood.
 - Never leave a burn unattended; char can smolder. Keep water or an
   extinguisher at the sawhorses.
