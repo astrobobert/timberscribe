@@ -1,0 +1,23 @@
+# CI: install deps + byte-compile everything (no test suite yet -- a pytest
+# harness around tsj_parser.py is a welcome contribution, see CONTRIBUTING).
+# pigpio is absent in CI; the hardware layer's simulation fallback is exactly
+# what keeps this compilable.
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Byte-compile all sources
+        run: python -m compileall -q app hardware config.py run.py
