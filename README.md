@@ -14,6 +14,8 @@ preview dialog, and drives the laser burn loop.
 `.tsj` jobs are produced by the [TimberDraw](https://github.com/astrobobert/timberdraw)
 AutoCAD plugin's scribe export (`TScribe` / `TScribeAll`) — one file per timber face,
 with profile linework, cut-to-length lines, depth/bevel labels, and peg bores.
+The file format is specified in [TSJ_SPEC.md](TSJ_SPEC.md); `app/tsj_parser.py`
+is its reference validator.
 
 ---
 
