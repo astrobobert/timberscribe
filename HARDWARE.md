@@ -22,8 +22,8 @@ the source, re-export the STL, commit both.
 
 | Print (`.stl`) | Qty | Source (`.f3d`) | Notes |
 |---|---|---|---|
-| Bridge Support | 1 *(verify)* | Bridge Supports.f3d | |
-| Bridge Motor Support | 1 *(verify)* | Bridge Supports.f3d | Two prints share one source file |
+| Bridge Support | 1 *(verify)* | Bridge Supports.f3d | Carries a limit switch |
+| Bridge Motor Support | 1 *(verify)* | Bridge Supports.f3d | Two prints share one source file; carries a limit switch |
 | Fixed Roller Bracket A | 1 *(verify)* | Fixed Roller Bracket A.f3d | |
 | Fixed Roller Bracket B | 1 *(verify)* | Fixed Roller Bracket B.f3d | |
 | Float Roller Bracket AA | 1 *(verify)* | Float Roller Bracket A.f3d | AA/AB from one source *(mirrored pair? verify)* |
@@ -50,7 +50,6 @@ infill ______ , supports ______ .
 |---|---|---|
 | Battery Mount | 1 | Kobalt pack cradle |
 | Controller Mount / Enclosure | 1 | DLC32 + wiring bay |
-| Limit Switch Mounts | 2 | (gantry bracket exists; frame ends needed?) |
 | Cable Clips | 2+ | |
 
 ## 2. Bill of materials
@@ -83,7 +82,7 @@ infill ______ , supports ______ .
 | 1 | MKS DLC32 V2.1 controller | ✓ |
 | 1 | Creality CV 1.6 W laser module | ✓ |
 | 1 | Raspberry Pi Zero 2 W (runs the TimberScribe server) | *(verify role vs DLC32 — see §4 note)* |
-| 4 | Limit switches | need switch type |
+| 4 | Limit switches | 2 on the gantry brackets, 2 on the bridge supports; need switch type |
 | 2 | Stepper motor extension cables | TBD |
 | 1 | Controller enclosure | design required (§1) |
 | 1 | Wiring harness | TBD |
