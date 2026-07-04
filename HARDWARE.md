@@ -33,7 +33,7 @@ the source, re-export the STL, commit both.
 | Gantry to Frame Bracket | 2 *(verify)* | Gantry to Frame Bracket.f3d | |
 | Gantry Limit Switch Bracket | 2 *(verify)* | Gantry Limit Switch Bracket.f3d | |
 | Laser Mount | 1 | Laser Mount.f3d | |
-| MKS DLC32 Bracket | 1 | MKS DLC32 Bracket.f3z | |
+| MKS DLC32 Bracket | 1 | MKS DLC32 Bracket.f3z | The controller mount |
 | Tensioner_Body1 | 1 | Tensioner.f3z | Belt tensioner, piece 1 of 3 |
 | Tensioner_Body2 | 1 | Tensioner.f3z | Belt tensioner, piece 2 of 3 |
 | Tensioner_Body3 | 1 | Tensioner.f3z | Belt tensioner, piece 3 of 3 |
@@ -49,7 +49,6 @@ infill ______ , supports ______ .
 | Part | Qty | Notes |
 |---|---|---|
 | Battery Mount | 1 | Kobalt pack cradle |
-| Controller Mount / Enclosure | 1 | DLC32 + wiring bay |
 | Cable Clips | 2+ | |
 
 ## 2. Bill of materials
@@ -84,7 +83,7 @@ infill ______ , supports ______ .
 | 1 | Raspberry Pi Zero 2 W (runs the TimberScribe server) | *(verify role vs DLC32 — see §4 note)* |
 | 4 | Limit switches | 2 on the gantry brackets, 2 on the bridge supports; need switch type |
 | 2 | Stepper motor extension cables | TBD |
-| 1 | Controller enclosure | design required (§1) |
+| 1 | Controller mount | printed — MKS DLC32 Bracket, §1 |
 | 1 | Wiring harness | TBD |
 
 ### 2.4 Power
