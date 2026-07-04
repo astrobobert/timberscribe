@@ -73,7 +73,8 @@ infill ______ , supports ______ .
 | 1 | GT2 10 mm belt (open, by the meter) | cut to suit — length set by the timber to be scribed |
 | 1 | Belt tensioner | printed — 3-piece, §1 |
 | 1 | Gantry trolley | model TBD |
-| 8 | 25×25 mm nylon V-rollers | need supplier / part number |
+| 8 | 25×25 mm nylon V-rollers (uxcell; 686Z roller bearings, 6 mm bore) | ✓ |
+| 8 *(verify qty)* | 5.9 mm axle rods | slip fit through the 6 mm bearing bore |
 
 ### 2.3 Electronics
 
