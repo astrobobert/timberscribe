@@ -1,8 +1,19 @@
-# Timber Scribe — Pi Flask Server
+# TimberScribe — Pi Laser Print Head
 
-Web server that runs on the Raspberry Pi print head.
-Accepts `.tsj` job files from the framer's phone or laptop,
-shows a face preview dialog, and drives the laser burn loop.
+**TimberScribe** is the scribing side of the **Timber Frame Suite** — an open-source
+CAD/CAM system for traditional timber framers. A self-propelled laser print head
+rides the timber and burns the joinery layout — mortise outlines, cut lines, bore
+centers, labels — directly onto the wood. The joints themselves are still cut by
+hand with traditional tools: the laser replaces tape-measure layout, not
+craftsmanship.
+
+This repository is the web server that runs on the Raspberry Pi print head.
+It accepts `.tsj` job files from the framer's phone or laptop, shows a face
+preview dialog, and drives the laser burn loop.
+
+`.tsj` jobs are produced by the [TimberDraw](https://github.com/astrobobert/timberdraw)
+AutoCAD plugin's scribe export (`TScribe` / `TScribeAll`) — one file per timber face,
+with profile linework, cut-to-length lines, depth/bevel labels, and peg bores.
 
 ---
 
