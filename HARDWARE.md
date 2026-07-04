@@ -72,7 +72,7 @@ infill ______ , supports ______ .
 | 2 | GT2 10 mm idler pulleys, smooth | ✓ |
 | 1 | GT2 10 mm belt (open, by the meter) | cut to suit — length set by the timber to be scribed |
 | 1 | Belt tensioner | printed — 3-piece, §1 |
-| 1 | Gantry trolley | model TBD |
+| 1 | Gantry: [V-Slot NEMA 17 belt-driven linear actuator bundle](https://www.ebay.com/itm/405009993772?var=675070040219) (prebuilt) | ✓ — stock tensioner swapped for the printed one (§1) |
 | 8 | 25×25 mm nylon V-rollers (uxcell; 686Z roller bearings, 6 mm bore) | ✓ |
 | 8 *(verify qty)* | 5.9 mm axle rods | slip fit through the 6 mm bearing bore |
 
@@ -131,9 +131,11 @@ build/teardown.
 2. **Rollers** — fixed brackets one side, floating brackets the other; how
    the float preloads against timber width variation.
    > *[photo: roller bracket pair on a rail edge, fixed vs float called out.]*
-3. **Bridge / gantry** — bridge supports, trolley, gantry-to-frame brackets,
-   drive belt + tensioner.
-   > *[photo: gantry assembled, belt path visible.]*
+3. **Bridge / gantry** — the gantry arrives as a prebuilt belt-driven
+   actuator (§2.2): swap its stock tensioner for the printed 3-piece one,
+   then mount via the bridge supports and gantry-to-frame brackets.
+   > *[photo: gantry assembled, belt path visible, printed tensioner called
+   > out.]*
 4. **Laser mount** — module on the mount, air assist routing.
    > *[photo: laser mount close-up.]*
 5. **Electronics + power** — DLC32 in its bracket, limit switches, battery,
