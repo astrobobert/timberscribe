@@ -34,6 +34,9 @@ the source, re-export the STL, commit both.
 | Gantry Limit Switch Bracket | 2 *(verify)* | Gantry Limit Switch Bracket.f3d | |
 | Laser Mount | 1 | Laser Mount.f3d | |
 | MKS DLC32 Bracket | 1 | MKS DLC32 Bracket.f3z | |
+| Tensioner_Body1 | 1 | Tensioner.f3z | Belt tensioner, piece 1 of 3 |
+| Tensioner_Body2 | 1 | Tensioner.f3z | Belt tensioner, piece 2 of 3 |
+| Tensioner_Body3 | 1 | Tensioner.f3z | Belt tensioner, piece 3 of 3 |
 
 `Frame.f3d` is the **sled assembly file** — the whole machine modeled
 together. It is not a printed part and has no STL.
@@ -47,7 +50,6 @@ infill ______ , supports ______ .
 |---|---|---|
 | Battery Mount | 1 | Kobalt pack cradle |
 | Controller Mount / Enclosure | 1 | DLC32 + wiring bay |
-| Belt Tensioner | 1 | Design, or COTS GT2 tensioner |
 | Limit Switch Mounts | 2 | (gantry bracket exists; frame ends needed?) |
 | Cable Clips | 2+ | |
 
@@ -70,7 +72,7 @@ infill ______ , supports ______ .
 | 2 | GT2 10 mm motor pulleys | need tooth count + bore |
 | 2 | GT2 10 mm idler pulleys | need specifications |
 | 1 | GT2 10 mm belt | length TBD |
-| 1 | Belt tensioner | model TBD (or printed, §1) |
+| 1 | Belt tensioner | printed — 3-piece, §1 |
 | 1 | Gantry trolley | model TBD |
 | 8 | 25×25 mm nylon V-rollers | need supplier / part number |
 
