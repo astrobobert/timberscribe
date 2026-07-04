@@ -59,13 +59,11 @@ infill ______ , supports ______ .
 |---|---|---|
 | 2 | V-Slot 20×40 × 400 mm | ✓ |
 | 3 | V-Slot 20×40 × 200 mm | ✓ |
-| 1 | V-Slot 20×20 × 500 mm | ✓ |
 
 ### 2.2 Motion system
 
 | Qty | Part | Status |
 |---|---|---|
-| 1 | 17HD48002-24B stepper motor | ✓ |
 | 1 | 42BL4002-24A stepper motor | ✓ |
 | 1 | GT2 10 mm motor pulleys, 20T, 6 mm bore | ✓ |
 | 1 | GT2 10 mm idler pulleys, toothed | ✓ |
@@ -74,7 +72,7 @@ infill ______ , supports ______ .
 | 1 | Belt tensioner | printed — 3-piece, §1 |
 | 1 | Gantry: [V-Slot NEMA 17 belt-driven linear actuator bundle](https://www.ebay.com/itm/405009993772?var=675070040219) (prebuilt) | ✓ — stock tensioner swapped for the printed one (§1) |
 | 8 | 25×25 mm nylon V-rollers (uxcell; 686Z roller bearings, 6 mm bore) | ✓ |
-| 8 *(verify qty)* | 5.9 mm axle rods | slip fit through the 6 mm bearing bore |
+| 8 | 5.9 mm axle rods | slip fit through the 6 mm bearing bore |
 
 ### 2.3 Electronics
 
