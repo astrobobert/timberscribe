@@ -5,9 +5,13 @@ nylon rollers, a gantry carrying a 1.6 W laser module, driven by an MKS DLC32
 controller from a Kobalt 24 V tool battery. This guide covers printing the
 brackets, buying the rest, and putting it together.
 
-> **Figure H-1 — The assembled sled on a timber.**
-> *[photo: full sled sitting on a squared timber, three-quarter view; callouts
-> on: frame rails, gantry, laser module, controller, battery, rollers.]*
+> **Figure H-1 — The sled assembly (CAD render).**
+>
+> ![Sled assembly render — three-quarter view showing the frame rails, gantry, laser module, and rollers](docs/img/sled-assembly-render.png)
+>
+> *Render from `Frame.f3d`; controller and battery not shown. To be replaced
+> by a photo of the sled on a squared timber with callouts on: frame rails,
+> gantry, laser module, controller, battery, rollers.*
 
 **Status: draft.** Rows marked *TBD* / *verify* need real values from the
 bench. Photos land in `docs/img/`.
@@ -22,16 +26,16 @@ the source, re-export the STL, commit both.
 
 | Print (`.stl`) | Qty | Source (`.f3d`) | Notes |
 |---|---|---|---|
-| Bridge Support | 1 *(verify)* | Bridge Supports.f3d | Carries a limit switch |
-| Bridge Motor Support | 1 *(verify)* | Bridge Supports.f3d | Two prints share one source file; carries a limit switch |
-| Fixed Roller Bracket A | 1 *(verify)* | Fixed Roller Bracket A.f3d | |
-| Fixed Roller Bracket B | 1 *(verify)* | Fixed Roller Bracket B.f3d | |
-| Float Roller Bracket AA | 1 *(verify)* | Float Roller Bracket A.f3d | AA/AB from one source *(mirrored pair? verify)* |
-| Float Roller Bracket AB | 1 *(verify)* | Float Roller Bracket A.f3d | |
-| Float Roller Bracket BA | 1 *(verify)* | Float Roller Bracket B.f3d | |
-| Float Roller Bracket BB | 1 *(verify)* | Float Roller Bracket B.f3d | |
-| Gantry to Frame Bracket | 2 *(verify)* | Gantry to Frame Bracket.f3d | |
-| Gantry Limit Switch Bracket | 2 *(verify)* | Gantry Limit Switch Bracket.f3d | |
+| Bridge Support | 1 | Bridge Supports.f3d | Carries a limit switch |
+| Bridge Motor Support | 1 | Bridge Supports.f3d | Two prints share one source file; carries a limit switch |
+| Fixed Roller Bracket A | 1 | Fixed Roller Bracket A.f3d | |
+| Fixed Roller Bracket B | 1 | Fixed Roller Bracket B.f3d | |
+| Float Roller Bracket AA | 1 | Float Roller Bracket A.f3d | AA/AB from one source |
+| Float Roller Bracket AB | 1 | Float Roller Bracket A.f3d | |
+| Float Roller Bracket BA | 1 | Float Roller Bracket B.f3d | |
+| Float Roller Bracket BB | 1 | Float Roller Bracket B.f3d | |
+| Gantry to Frame Bracket | 2 | Gantry to Frame Bracket.f3d | |
+| Gantry Limit Switch Bracket | 2 | Gantry Limit Switch Bracket.f3d | |
 | Laser Mount | 1 | Laser Mount.f3d | |
 | MKS DLC32 Bracket | 1 | MKS DLC32 Bracket.f3z | The controller mount |
 | Tensioner_Body1 | 1 | Tensioner.f3z | Belt tensioner, piece 1 of 3 |
@@ -80,7 +84,7 @@ infill ______ , supports ______ .
 |---|---|---|
 | 1 | MKS DLC32 V2.1 controller | ✓ |
 | 1 | Creality CV 1.6 W laser module | ✓ |
-| 1 | Raspberry Pi Zero 2 W (runs the TimberScribe server) | *(verify role vs DLC32 — see §4 note)* |
+| 1 | Raspberry Pi (model TBD — Pi 5 used on the bench) | runs the TimberScribe server; streams g-code to the DLC32 over USB serial |
 | 4 | Limit switches | 2 on the gantry brackets, 2 on the bridge supports; need switch type |
 | 2 | Stepper motor extension cables | TBD |
 | 1 | Controller mount | printed — MKS DLC32 Bracket, §1 |
@@ -129,14 +133,18 @@ build/teardown.
 2. **Rollers** — fixed brackets one side, floating brackets the other; how
    the float preloads against timber width variation.
    > *[photo: roller bracket pair on a rail edge, fixed vs float called out.]*
-3. **Bridge / gantry** — the gantry arrives as a prebuilt belt-driven
-   actuator (§2.2): swap its stock tensioner for the printed 3-piece one,
-   then mount via the bridge supports and gantry-to-frame brackets.
+3. **Gantry** — the cross-timber axis; it carries the laser. Arrives as a
+   prebuilt belt-driven actuator (§2.2): swap its stock tensioner for the
+   printed 3-piece one, then mount via the gantry-to-frame brackets.
    > *[photo: gantry assembled, belt path visible, printed tensioner called
    > out.]*
-4. **Laser mount** — module on the mount, air assist routing.
+4. **Bridge** — the along-the-timber drive axis, separate from the gantry:
+   the bridge support and bridge motor support carry the drive stepper and
+   route the timing belt up and over the laser so the belt can clear it.
+   > *[photo: bridge mounted, belt path over the laser visible.]*
+5. **Laser mount** — module on the mount, air assist routing.
    > *[photo: laser mount close-up.]*
-5. **Electronics + power** — DLC32 in its bracket, limit switches, battery,
+6. **Electronics + power** — DLC32 in its bracket, limit switches, battery,
    regulator, fusing, e-stop, harness routing.
    > *[photo: electronics bay, labeled.]*
 
@@ -146,11 +154,12 @@ build/teardown.
 
 *(TBD: DLC32 port map — steppers, limit switches, laser PWM, power in.)*
 
-> **Note (to reconcile):** the server code and [README](README.md) GPIO table
-> currently describe the earlier direct-GPIO drive (single motor PWM +
-> encoder on the Pi via pigpio). The sled BOM above is the newer
-> DLC32-based motion system. Update this section and
-> `hardware/executor.py`/`config.py` docs together when that lands.
+> **Note:** the server ([README](README.md), `hardware/executor.py`,
+> `config.py`) speaks g-code over USB serial to the DLC32 — the Pi is the
+> server, the DLC32 is the motion controller. The DLC32 port map above
+> (steppers, limit switches, laser PWM, power in) is still TBD; fill it in
+> when the board is wired. An earlier bench prototype ran on a 3018
+> Woodpecker (GRBL) controller board; the DLC32 supersedes it.
 
 ## 5. Safety
 

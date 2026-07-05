@@ -23,13 +23,13 @@ DEFAULT_FEED_IN_PER_MIN  = 32    # inches per minute
 DEFAULT_LASER_POWER_PCT  = 70    # percent
 DEFAULT_TRAVEL_IN_PER_MIN = 118  # laser-off travel speed
 
-# Hardware GPIO pins (Pi 4/5, BCM numbering)
-MOTOR_PWM_PIN    = 18   # motor speed PWM
-MOTOR_DIR_PIN    = 23   # motor direction
-MOTOR_ENC_A_PIN  = 24   # encoder channel A
-MOTOR_ENC_B_PIN  = 25   # encoder channel B
-LASER_PWM_PIN    = 12   # laser power PWM (hardware PWM)
-TAPE_SENSOR_PIN  = 17   # optical tape sensor input
+# GRBL controller (MKS DLC32 V2.1) — g-code over USB serial.
+# The DLC32's CH340 USB-UART enumerates as /dev/ttyUSB0 on the Pi.
+SERIAL_PORT         = "/dev/ttyUSB0"
+SERIAL_BAUD         = 115200   # GRBL default
+SERIAL_TIMEOUT_S    = 2.0      # per-read timeout
+GRBL_STARTUP_WAIT_S = 2.0      # GRBL resets on port open; wait for its banner
+GRBL_SPINDLE_MAX_S  = 1000     # laser S-value at 100% power (must match GRBL $30)
 
 # Motion limits
 MAX_FEED_IN_PER_MIN  = 200

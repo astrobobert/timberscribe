@@ -58,10 +58,11 @@ def _run(job_id: str):
             f"Burning face {face_num} — {len(tsj.entities)} entities"
         )
 
-        # Hand off to the hardware burn loop
-        try:
-            from hardware.executor import burn
-            burn(
+        # Hand off to the hardware burn loop — or simulate when no
+        # GRBL controller is attached (dev machine / CI)
+        from hardware import executor as hw_executor
+        if hw_executor.HAS_HARDWARE:
+            hw_executor.burn(
                 entities        = tsj.entities,
                 feed_in_per_min = tsj.feed_in_per_min,
                 laser_power_pct = tsj.laser_power_pct,
@@ -70,8 +71,7 @@ def _run(job_id: str):
                     job_id, "printing", msg
                 ),
             )
-        except ImportError:
-            # Hardware layer not available (running on dev machine)
+        else:
             _simulate(job_id, tsj)
 
         job_store.set_status(job_id, "done", "Complete")

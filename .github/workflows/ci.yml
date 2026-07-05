@@ -1,7 +1,7 @@
 # CI: install deps + byte-compile everything (no test suite yet -- a pytest
 # harness around tsj_parser.py is a welcome contribution, see CONTRIBUTING).
-# pigpio is absent in CI; the hardware layer's simulation fallback is exactly
-# what keeps this compilable.
+# No GRBL controller serial port exists in CI; the hardware layer's
+# simulation fallback is exactly what keeps this runnable.
 name: CI
 
 on:

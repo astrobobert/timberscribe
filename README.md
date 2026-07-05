@@ -9,7 +9,7 @@ craftsmanship.
 
 This repository is the web server that runs on the Raspberry Pi print head.
 It accepts `.tsj` job files from the framer's phone or laptop, shows a face
-preview dialog, and drives the laser burn loop.
+preview dialog, and streams g-code to the sled's GRBL controller.
 
 `.tsj` jobs are produced by the [TimberDraw](https://github.com/astrobobert/timberdraw)
 AutoCAD plugin's scribe export (`TScribe` / `TScribeAll`) — one file per timber face,
@@ -29,9 +29,11 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Start pigpio daemon (required for hardware GPIO):
+Plug the GRBL controller (MKS DLC32) into the Pi's USB and give your user
+serial-port access (once, then log out/in):
 ```bash
-sudo pigpiod
+sudo usermod -a -G dialout $USER
+ls /dev/ttyUSB0        # confirm the controller enumerated
 ```
 
 Run the server:
@@ -56,8 +58,9 @@ flask --app run:app run --debug --host 0.0.0.0 --port 5000
 ```
 
 The hardware layer (`hardware/executor.py`) gracefully falls back
-to a simulation mode when `pigpio` is not connected, so the full
-web UI works on a dev machine without GPIO hardware.
+to a simulation mode when no GRBL controller is present on
+`config.SERIAL_PORT`, so the full web UI works on a dev machine
+without the sled attached.
 
 ---
 
@@ -73,7 +76,7 @@ TimberScribe/
 │   └── executor.py       Background print thread
 ├── hardware/
 │   ├── __init__.py
-│   └── executor.py       Real-time burn loop (pigpio)
+│   └── executor.py       GRBL g-code sender (USB serial)
 ├── static/
 │   └── style.css         Mobile-friendly stylesheet
 ├── templates/
@@ -83,7 +86,7 @@ TimberScribe/
 ├── data/
 │   └── jobs.db           SQLite database (auto-created)
 ├── uploads/              Uploaded .tsj files
-├── config.py             All settings (ports, GPIO pins, defaults)
+├── config.py             All settings (ports, serial, burn defaults)
 ├── run.py                Entry point
 └── requirements.txt
 ```
@@ -105,13 +108,24 @@ TimberScribe/
 
 ---
 
-## GPIO pins (BCM, configurable in config.py)
+## Architecture
 
-| Pin | Signal |
-|---|---|
-| 18 | Motor PWM |
-| 23 | Motor direction |
-| 24 | Encoder channel A |
-| 25 | Encoder channel B |
-| 12 | Laser PWM (hardware PWM) |
-| 17 | Tape optical sensor |
+The Pi is the server, not the motion controller:
+
+```
+phone/laptop ──WiFi──▶ Pi (this Flask server)
+                        │  g-code over USB serial, 115200 baud
+                        ▼
+              MKS DLC32 V2.1 (GRBL)
+                        │
+        ┌───────────────┼───────────────────┐
+        ▼               ▼                   ▼
+  gantry stepper   bridge drive       laser PWM
+  (cross axis,     stepper (along     (1.6 W Creality)
+  carries laser)   the timber)      + 4 limit switches
+```
+
+Serial port and baud live in `config.py` (`SERIAL_PORT`, `SERIAL_BAUD`).
+The earlier bench prototype used a 3018 Woodpecker GRBL board; the DLC32
+supersedes it. The DLC32 port map (steppers, limit switches, laser PWM,
+power in) is still TBD — see [HARDWARE.md](HARDWARE.md) §4.
