@@ -28,7 +28,9 @@ DEFAULT_TRAVEL_IN_PER_MIN = 118  # laser-off travel speed
 # running this server joins it. Raw g-code rides TCP port 23 (FluidNC's
 # telnet service) — the same line/ok call-response protocol as serial.
 GRBL_TRANSPORT = "wifi"        # "wifi" (shop) or "serial" (USB bench fallback)
-GRBL_HOST      = "192.168.0.1" # FluidNC AP-mode default address
+GRBL_HOST      = "192.168.4.1" # sled AP address — moved off the FluidNC
+                               # default 192.168.0.1 (collided with the shop
+                               # LAN); stored on the board via $AP/IP
 GRBL_TCP_PORT  = 23            # FluidNC telnet service (raw g-code)
 GRBL_AP_SSID   = "FluidNC"     # sled hotspot name — shown in connect errors
 GRBL_CONNECT_TIMEOUT_S = 3.0   # connect/probe; fails fast when off-network

@@ -198,14 +198,14 @@ Bench state as of 2026-07-18:
 |---|---|---|
 | Firmware | FluidNC v4.0.3 (esp32-wifi build), flashed via the [web installer](https://installer.fluidnc.com) | ✓ confirmed on the board |
 | Config | `hardware/fluidnc/config.yaml` — base: official `MKS_DLC32_v21_laser.yaml`; Z axis removed (its floating limit input, gpio.34, threw a phantom hard-limit alarm every boot) | ✓ uploaded, boots clean |
-| WiFi mode | AP (hotspot) — SSID **FluidNC**, password **12345678** (FluidNC defaults), address `192.168.0.1`; matches `config.py` `GRBL_AP_SSID` / `GRBL_HOST` | ✓ boot log |
+| WiFi mode | AP (hotspot) — SSID **FluidNC**, password **12345678** (FluidNC defaults), address `192.168.4.1` — moved off the default `192.168.0.1`, which collided with the shop LAN (`$AP/IP=192.168.4.1`, stored on the board, **not** in config.yaml); matches `config.py` `GRBL_AP_SSID` / `GRBL_HOST` | ✓ boot log |
 | G-code port | TCP 23 — "Telnet started on port 23" | ✓ boot log |
 | Protocol | TimberScribe preamble `G20`/`G90`/`M5` acknowledged, status Idle | ✓ over USB |
 | Spindle | **Laser** on gpio.32 at 5 kHz — laser mode, so the beam only fires during motion; a dropped WiFi link mid-burn stops motion and the beam goes dark | ✓ in config; **bench check owed once wired: beam dark whenever motion stops** |
 | S-value scale | laser `speed_map` tops at 1000 = `config.py GRBL_SPINDLE_MAX_S` | ✓ |
 | Steps/mm, travels, homing | donor values in the config | calibrate at wiring (§4 port map) |
 
-The board's own FluidNC web page (at `http://192.168.0.1` when joined to
+The board's own FluidNC web page (at `http://192.168.4.1` when joined to
 the hotspot) can upload a g-code file to the SD card and run it from
 there — a useful fallback that keeps burning even if WiFi drops
 mid-job.
