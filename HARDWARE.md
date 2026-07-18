@@ -85,7 +85,7 @@ infill ______ , supports ______ .
 |---|---|---|
 | 1 | MKS DLC32 V2.2 controller | ✓ — flashed with FluidNC (§4.1); hosts the sled's WiFi hotspot |
 | 1 | Creality CV 1.6 W laser module | ✓ |
-| 4 | Limit switches — 3-wire modules (5 V, S/G/V), pre-mated connectors | 2 on the gantry brackets, 2 on the bridge supports; board endstop headers supply 5 V (manual §IX) |
+| 4 | Limit switches — 3-wire modules labeled IN/GND/12V, pre-mated connectors | 2 on the gantry brackets, 2 on the bridge supports; run fine from the endstop header's 5 V supply (verified 2026-07-18: `Pn:X`/`Pn:Y` respond, polarity matches the config's `:low`) |
 | 2 | Stepper motor extension cables | TBD |
 | 1 | Controller mount | printed — MKS DLC32 Bracket, §1 |
 | 1 | Wiring harness | TBD |
