@@ -85,7 +85,7 @@ infill ______ , supports ______ .
 |---|---|---|
 | 1 | MKS DLC32 V2.2 controller | ✓ — flashed with FluidNC (§4.1); hosts the sled's WiFi hotspot |
 | 1 | Creality CV 1.6 W laser module | ✓ |
-| 4 | Limit switches | 2 on the gantry brackets, 2 on the bridge supports; need switch type |
+| 4 | Limit switches — 3-wire modules (5 V, S/G/V), pre-mated connectors | 2 on the gantry brackets, 2 on the bridge supports; board endstop headers supply 5 V (manual §IX) |
 | 2 | Stepper motor extension cables | TBD |
 | 1 | Controller mount | printed — MKS DLC32 Bracket, §1 |
 | 1 | Wiring harness | TBD |
@@ -170,9 +170,14 @@ frame): `$H` homes Y first — gantry toward the **fixed-roller (datum)
 edge** — then X — bridge toward the **anchor (tape-hook) end**. Each
 axis runs to its switch, backs off 2 mm, and calls that spot zero, so
 machine coordinates measure exactly like the `.tsj` file. Homing wiring
-for now: **one normally-open switch per axis at the homing end** (the
-datum-side gantry switch → Y− header, the anchor-end bridge switch →
-X− header; signal + GND pins). The far-end switches stay unwired until
+for now: **one switch per axis at the homing end** (the datum-side
+gantry switch → Y− header, the anchor-end bridge switch → X− header).
+The switches are 3-wire modules on pre-mated connectors; the board's
+endstop headers are **5 V / GND / S** (manual §IX) — match the S/G/V
+markings on the switch PCB to the board silkscreen before powering, and
+if the board's 5 V LED goes dark at power-up, unplug immediately: the
+manual calls that a short in the endstop wiring. The far-end switches
+stay unwired until
 we opt into series-NC wiring (which flips the inputs to active-high and
 enables `hard_limits`) — the sled carries 4 switches but the board has
 one limit input per axis. Homing speeds are detuned for first tests
