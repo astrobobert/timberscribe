@@ -165,13 +165,21 @@ Port map (from `hardware/fluidnc/config.yaml`, confirmed on the board
 | Power in | 12–24 V DC screw terminal | — |
 | Z header | unused | no Z axis — the laser is fixed-focus |
 
-Wiring decision still open: the sled carries **4** limit switches (both
-ends of each axis) but the board exposes one limit input per axis —
-either wire each axis's pair in series (normally-closed) into its
-input, or fit only the homing-end pair. Steps/mm and travel values in
-the config are donor values (100 steps/mm assumes 16 T pulleys; the BOM
-has 20 T, which at 16 microsteps works out to 80) — calibrate when the
-motors are wired.
+**Homing** (configured in `config.yaml`, matches the `.tsj` coordinate
+frame): `$H` homes Y first — gantry toward the **fixed-roller (datum)
+edge** — then X — bridge toward the **anchor (tape-hook) end**. Each
+axis runs to its switch, backs off 2 mm, and calls that spot zero, so
+machine coordinates measure exactly like the `.tsj` file. Homing wiring
+for now: **one normally-open switch per axis at the homing end** (the
+datum-side gantry switch → Y− header, the anchor-end bridge switch →
+X− header; signal + GND pins). The far-end switches stay unwired until
+we opt into series-NC wiring (which flips the inputs to active-high and
+enables `hard_limits`) — the sled carries 4 switches but the board has
+one limit input per axis. Homing speeds are detuned for first tests
+(seek 2000 mm/min); raise them once trusted. Steps/mm and travel values
+are donor values (100 steps/mm assumes 16 T pulleys; the BOM has 20 T,
+which at 16 microsteps works out to 80) — calibrate when the motors are
+wired.
 
 > **Note:** the server ([README](README.md), `hardware/executor.py`,
 > `config.py`) speaks g-code to the DLC32 **over WiFi** — the controller
@@ -203,7 +211,8 @@ Bench state as of 2026-07-18:
 | Protocol | TimberScribe preamble `G20`/`G90`/`M5` acknowledged, status Idle | ✓ over USB |
 | Spindle | **Laser** on gpio.32 at 5 kHz — laser mode, so the beam only fires during motion; a dropped WiFi link mid-burn stops motion and the beam goes dark | ✓ in config; **bench check owed once wired: beam dark whenever motion stops** |
 | S-value scale | laser `speed_map` tops at 1000 = `config.py GRBL_SPINDLE_MAX_S` | ✓ |
-| Steps/mm, travels, homing | donor values in the config | calibrate at wiring (§4 port map) |
+| Homing | Y (gantry → datum edge) then X (bridge → anchor end), zero at the switch + 2 mm pulloff, detuned speeds | ✓ in config; **test owed once switches are wired** (§4) |
+| Steps/mm, travels | donor values in the config | calibrate at wiring (§4 port map) |
 
 The board's own FluidNC web page (at `http://192.168.4.1` when joined to
 the hotspot) can upload a g-code file to the SD card and run it from

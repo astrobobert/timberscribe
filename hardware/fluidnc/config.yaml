@@ -23,11 +23,15 @@ axes:
     max_travel_mm: 895
     soft_limits: false
     homing:
-      cycle: 0
+      # Bridge homes SECOND (cycle 2), toward the anchor / tape-hook
+      # end of the timber — the switch wired to the X- header must be
+      # the anchor-end one, so machine X=0 is where .tsj X measures
+      # from. Speeds detuned for first tests; raise after calibration.
+      cycle: 2
       positive_direction: false
       mpos_mm: 0.000
-      feed_mm_per_min: 500.000
-      seek_mm_per_min: 16000.000
+      feed_mm_per_min: 300.000
+      seek_mm_per_min: 2000.000
       settle_ms: 500
       seek_scaler: 1.100
       feed_scaler: 1.100
@@ -47,11 +51,14 @@ axes:
     max_travel_mm: 880
     soft_limits: false
     homing:
-      cycle: 0
+      # Gantry homes FIRST (cycle 1), toward the fixed-roller (datum)
+      # edge — the switch wired to the Y- header must be the one on
+      # that side, so machine Y=0 is the edge .tsj Y measures from.
+      cycle: 1
       positive_direction: false
       mpos_mm: 0.000
-      feed_mm_per_min: 500.000
-      seek_mm_per_min: 16000.000
+      feed_mm_per_min: 300.000
+      seek_mm_per_min: 2000.000
       settle_ms: 500
       seek_scaler: 1.100
       feed_scaler: 1.100
