@@ -152,36 +152,58 @@ build/teardown.
 
 > *[photo: harness overview + a wiring diagram when the design settles.]*
 
-*(TBD: DLC32 port map — steppers, limit switches, laser PWM, power in.)*
+Port map (from `hardware/fluidnc/config.yaml`, confirmed on the board
+2026-07-18):
+
+| Sled function | DLC32 header | Firmware pin |
+|---|---|---|
+| Bridge drive stepper (X — along the timber) | X motor header | step I2SO.1, dir I2SO.2 (via the board's shift register) |
+| Gantry stepper (Y — across the timber) | Y motor header | step I2SO.5, dir I2SO.6 |
+| X limit switch | X− header | gpio.36, active low |
+| Y limit switch | Y− header | gpio.35, active low |
+| Laser (TTL PWM) | laser header | gpio.32, 5 kHz |
+| Power in | 12–24 V DC screw terminal | — |
+| Z header | unused | no Z axis — the laser is fixed-focus |
+
+Wiring decision still open: the sled carries **4** limit switches (both
+ends of each axis) but the board exposes one limit input per axis —
+either wire each axis's pair in series (normally-closed) into its
+input, or fit only the homing-end pair. Steps/mm and travel values in
+the config are donor values (100 steps/mm assumes 16 T pulleys; the BOM
+has 20 T, which at 16 microsteps works out to 80) — calibrate when the
+motors are wired.
 
 > **Note:** the server ([README](README.md), `hardware/executor.py`,
 > `config.py`) speaks g-code to the DLC32 **over WiFi** — the controller
 > hosts its own hotspot (FluidNC AP mode) and takes raw g-code on TCP
 > port 23; the laptop running the server just joins the sled's network.
-> The DLC32 port map above (steppers, limit switches, laser PWM, power
-> in) is still TBD; fill it in when the board is wired. Lineage: a 3018
-> Woodpecker (GRBL) board ran the first bench prototype; then a DLC32
-> V2.1 fed over USB serial by a Raspberry Pi 5 riding the sled; the
-> DLC32 V2.2's onboard WiFi retired the Pi — nothing rides the sled now
-> but the controller. USB serial to the DLC32 remains as a bench
-> fallback (`GRBL_TRANSPORT = "serial"` in `config.py`).
+> Lineage: a 3018 Woodpecker (GRBL) board ran the first bench prototype;
+> then a DLC32 V2.1 fed over USB serial by a Raspberry Pi 5 riding the
+> sled; the DLC32 V2.2's onboard WiFi retired the Pi — nothing rides the
+> sled now but the controller. USB serial to the DLC32 remains as a
+> bench fallback (`GRBL_TRANSPORT = "serial"` in `config.py`).
 
 ### 4.1 Firmware — FluidNC
 
 The V2.2 board runs [FluidNC](https://github.com/bdring/FluidNC) (the
-maintained successor to Grbl_ESP32, with an official MKS DLC32 example
-config) in place of the stock MKS firmware. Flash once at the bench;
-rows marked *verify* need confirmation against the working setup.
+maintained successor to Grbl_ESP32) in place of the stock MKS firmware.
+The controller's configuration is version-controlled at
+`hardware/fluidnc/config.yaml` — edit it there and push it to the board
+over USB with `hardware/fluidnc/upload_config.py`, which also prints
+the boot log so config errors are visible immediately.
+
+Bench state as of 2026-07-18:
 
 | Item | Value | Status |
 |---|---|---|
-| Firmware | FluidNC (web installer or `fluidterm`), MKS DLC32 example config as the starting point | verify version used |
-| WiFi mode | AP (hotspot) — the sled hosts its own network at the sawhorses | verify SSID; `config.py GRBL_AP_SSID` must match |
-| AP address | FluidNC AP default `192.168.0.1` (`config.py GRBL_HOST`) | verify |
-| G-code port | TCP 23 (telnet service, on by default) | verify |
-| Spindle | configured as **Laser** — laser mode, so M3 only fires during motion; a dropped WiFi link mid-burn stops motion and the beam goes dark | **required — safety** |
-| S-value scale | top of the laser `speed_map` = `config.py GRBL_SPINDLE_MAX_S` (1000) | verify |
-| Axes / steps / limits | from the port map above once wired | TBD |
+| Firmware | FluidNC v4.0.3 (esp32-wifi build), flashed via the [web installer](https://installer.fluidnc.com) | ✓ confirmed on the board |
+| Config | `hardware/fluidnc/config.yaml` — base: official `MKS_DLC32_v21_laser.yaml`; Z axis removed (its floating limit input, gpio.34, threw a phantom hard-limit alarm every boot) | ✓ uploaded, boots clean |
+| WiFi mode | AP (hotspot) — SSID **FluidNC**, password **12345678** (FluidNC defaults), address `192.168.0.1`; matches `config.py` `GRBL_AP_SSID` / `GRBL_HOST` | ✓ boot log |
+| G-code port | TCP 23 — "Telnet started on port 23" | ✓ boot log |
+| Protocol | TimberScribe preamble `G20`/`G90`/`M5` acknowledged, status Idle | ✓ over USB |
+| Spindle | **Laser** on gpio.32 at 5 kHz — laser mode, so the beam only fires during motion; a dropped WiFi link mid-burn stops motion and the beam goes dark | ✓ in config; **bench check owed once wired: beam dark whenever motion stops** |
+| S-value scale | laser `speed_map` tops at 1000 = `config.py GRBL_SPINDLE_MAX_S` | ✓ |
+| Steps/mm, travels, homing | donor values in the config | calibrate at wiring (§4 port map) |
 
 The board's own FluidNC web page (at `http://192.168.0.1` when joined to
 the hotspot) can upload a g-code file to the SD card and run it from

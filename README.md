@@ -84,7 +84,10 @@ TimberScribe/
 │   └── executor.py       Background print thread
 ├── hardware/
 │   ├── __init__.py
-│   └── executor.py       GRBL g-code sender (WiFi / USB serial)
+│   ├── executor.py       GRBL g-code sender (WiFi / USB serial)
+│   └── fluidnc/
+│       ├── config.yaml   The controller's FluidNC config (source of truth)
+│       └── upload_config.py  Bench tool: push config.yaml to the board over USB
 ├── static/
 │   └── style.css         Mobile-friendly stylesheet
 ├── templates/
