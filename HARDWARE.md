@@ -2,8 +2,9 @@
 
 The sled is the self-propelled print head: a V-slot frame riding the timber on
 nylon rollers, a gantry carrying a 1.6 W laser module, driven by an MKS DLC32
-controller from a Kobalt 24 V tool battery. This guide covers printing the
-brackets, buying the rest, and putting it together.
+V2.2 controller from a Kobalt 24 V tool battery. The controller hosts its own
+WiFi hotspot and takes g-code over it — there is no computer on the sled. This
+guide covers printing the brackets, buying the rest, and putting it together.
 
 > **Figure H-1 — The sled assembly (CAD render).**
 >
@@ -82,9 +83,8 @@ infill ______ , supports ______ .
 
 | Qty | Part | Status |
 |---|---|---|
-| 1 | MKS DLC32 V2.1 controller | ✓ |
+| 1 | MKS DLC32 V2.2 controller | ✓ — flashed with FluidNC (§4.1); hosts the sled's WiFi hotspot |
 | 1 | Creality CV 1.6 W laser module | ✓ |
-| 1 | Raspberry Pi (model TBD — Pi 5 used on the bench) | runs the TimberScribe server; streams g-code to the DLC32 over USB serial |
 | 4 | Limit switches | 2 on the gantry brackets, 2 on the bridge supports; need switch type |
 | 2 | Stepper motor extension cables | TBD |
 | 1 | Controller mount | printed — MKS DLC32 Bracket, §1 |
@@ -96,7 +96,7 @@ infill ______ , supports ______ .
 |---|---|---|
 | 1 | Kobalt 24 V battery | ✓ |
 | 1 | Kobalt battery adapter | need source |
-| 1 | 24 V voltage regulator | need exact model |
+| 1 | 24 V voltage regulator | need exact model — *verify whether still required: with the Pi gone there is no 5 V load, and the DLC32 accepts 12–24 V DC directly* |
 | 1 | Main fuse | rating TBD |
 | 1 | Master power switch | TBD |
 | 1 | Emergency stop | recommended |
@@ -155,11 +155,38 @@ build/teardown.
 *(TBD: DLC32 port map — steppers, limit switches, laser PWM, power in.)*
 
 > **Note:** the server ([README](README.md), `hardware/executor.py`,
-> `config.py`) speaks g-code over USB serial to the DLC32 — the Pi is the
-> server, the DLC32 is the motion controller. The DLC32 port map above
-> (steppers, limit switches, laser PWM, power in) is still TBD; fill it in
-> when the board is wired. An earlier bench prototype ran on a 3018
-> Woodpecker (GRBL) controller board; the DLC32 supersedes it.
+> `config.py`) speaks g-code to the DLC32 **over WiFi** — the controller
+> hosts its own hotspot (FluidNC AP mode) and takes raw g-code on TCP
+> port 23; the laptop running the server just joins the sled's network.
+> The DLC32 port map above (steppers, limit switches, laser PWM, power
+> in) is still TBD; fill it in when the board is wired. Lineage: a 3018
+> Woodpecker (GRBL) board ran the first bench prototype; then a DLC32
+> V2.1 fed over USB serial by a Raspberry Pi 5 riding the sled; the
+> DLC32 V2.2's onboard WiFi retired the Pi — nothing rides the sled now
+> but the controller. USB serial to the DLC32 remains as a bench
+> fallback (`GRBL_TRANSPORT = "serial"` in `config.py`).
+
+### 4.1 Firmware — FluidNC
+
+The V2.2 board runs [FluidNC](https://github.com/bdring/FluidNC) (the
+maintained successor to Grbl_ESP32, with an official MKS DLC32 example
+config) in place of the stock MKS firmware. Flash once at the bench;
+rows marked *verify* need confirmation against the working setup.
+
+| Item | Value | Status |
+|---|---|---|
+| Firmware | FluidNC (web installer or `fluidterm`), MKS DLC32 example config as the starting point | verify version used |
+| WiFi mode | AP (hotspot) — the sled hosts its own network at the sawhorses | verify SSID; `config.py GRBL_AP_SSID` must match |
+| AP address | FluidNC AP default `192.168.0.1` (`config.py GRBL_HOST`) | verify |
+| G-code port | TCP 23 (telnet service, on by default) | verify |
+| Spindle | configured as **Laser** — laser mode, so M3 only fires during motion; a dropped WiFi link mid-burn stops motion and the beam goes dark | **required — safety** |
+| S-value scale | top of the laser `speed_map` = `config.py GRBL_SPINDLE_MAX_S` (1000) | verify |
+| Axes / steps / limits | from the port map above once wired | TBD |
+
+The board's own FluidNC web page (at `http://192.168.0.1` when joined to
+the hotspot) can upload a g-code file to the SD card and run it from
+there — a useful fallback that keeps burning even if WiFi drops
+mid-job.
 
 ## 5. Safety
 

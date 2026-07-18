@@ -96,8 +96,8 @@ Optional/null fields are **omitted** by the writer, not emitted as `null`.
 
 ### `settings`
 
-Two machine profiles. All values are operator-adjustable on the Pi before
-printing; the file's values are starting points.
+Two machine profiles. All values are operator-adjustable in the server UI
+before printing; the file's values are starting points.
 
 ```json
 "settings": {

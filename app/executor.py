@@ -4,9 +4,6 @@ Executor — bridges the Flask job queue to the hardware burn loop.
 Runs the print job in a background daemon thread so Flask stays
 responsive during printing. The hardware layer (hardware/executor.py)
 does the actual motion and laser control.
-
-The Pi's physical run button is handled here too — it polls for a
-queued job and starts it when pressed.
 """
 
 import threading
@@ -58,10 +55,13 @@ def _run(job_id: str):
             f"Burning face {face_num} — {len(tsj.entities)} entities"
         )
 
-        # Hand off to the hardware burn loop — or simulate when no
-        # GRBL controller is attached (dev machine / CI)
+        # Hand off to the hardware burn loop — or simulate when the
+        # GRBL controller is unreachable (dev machine / CI). A simulated
+        # completion says so loudly: over WiFi, "unreachable" can also
+        # mean the sled hotspot dropped, and that must never read as a
+        # successful burn.
         from hardware import executor as hw_executor
-        if hw_executor.HAS_HARDWARE:
+        if hw_executor.hardware_available():
             hw_executor.burn(
                 entities        = tsj.entities,
                 feed_in_per_min = tsj.feed_in_per_min,
@@ -71,10 +71,14 @@ def _run(job_id: str):
                     job_id, "printing", msg
                 ),
             )
+            job_store.set_status(job_id, "done", "Complete")
         else:
             _simulate(job_id, tsj)
-
-        job_store.set_status(job_id, "done", "Complete")
+            job_store.set_status(
+                job_id, "done",
+                "Complete (SIMULATED — controller unreachable, "
+                "nothing was burned)"
+            )
 
     except Exception as e:
         tb = traceback.format_exc()

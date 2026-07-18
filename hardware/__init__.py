@@ -1,1 +1,1 @@
-# Hardware layer — GRBL g-code sender over USB serial (MKS DLC32)
+# Hardware layer — GRBL g-code sender, WiFi (FluidNC telnet) or USB serial (MKS DLC32)
