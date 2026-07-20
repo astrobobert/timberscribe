@@ -84,7 +84,7 @@ infill ______ , supports ______ .
 | Qty | Part | Status |
 |---|---|---|
 | 1 | MKS DLC32 V2.2 controller | ✓ — flashed with FluidNC (§4.1); hosts the sled's WiFi hotspot |
-| 2 | Stepper driver sticks (TMC2209 recommended; A4988 works) | **the DLC32's driver sockets are plug-in** (manual §VI) — without a stick the motor connector is dead; check the kit box, else source; set micro-step jumpers to 1/16 per the manual's table; set Vref for the motor current before first real runs; never insert/remove powered |
+| 2 | Stepper driver sticks — TMC2209 | **the DLC32's driver sockets are plug-in** (manual §VI) — without a stick the motor connector is dead. Per-socket red DIP switch (M0/M1/M2, up=ON=High): **1 ON, 2 ON, 3 down = 1/16 for TMC2209**. Orientation: stick's EN pin → socket EN (top of green column), DIR → DIR (bottom); check both corners — 180° reversed = burnt stick. Vref (volts) ≈ motor rated amps (≈70% run current); never insert/remove powered |
 | 1 | Creality CV 1.6 W laser module | ✓ |
 | 4 | Limit switches — 3-wire modules labeled IN/GND/12V, pre-mated connectors | 2 on the gantry brackets, 2 on the bridge supports; run fine from the endstop header's 5 V supply (verified 2026-07-18: `Pn:X`/`Pn:Y` respond, polarity matches the config's `:low`) |
 | 2 | Stepper motor extension cables | TBD |
