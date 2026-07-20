@@ -14,10 +14,23 @@ does all motor/laser timing. Transport is config.GRBL_TRANSPORT:
 Either way GRBL speaks the same call-response protocol: one line out,
 wait for "ok".
 
-This module is intentionally minimal now — the entity → g-code motion
-mapping (G0/G1/G2/G3 paths per entity type) will be developed here in
-the next phase. The transport plumbing (connect, handshake,
-call-response send, laser M3/M5) is real.
+Entity → g-code mapping (coordinates pass through 1:1 — machine zero is
+homed to the tape-hook / datum-edge corner, exactly where .tsj measures
+from; see TSJ_SPEC.md):
+
+  line      travel to start, M4, G1 to end, M5
+  polyline  travel to first point, M4, chained G1s (+ close), M5
+  circle    center cross (two strokes), then a full G3 — peg bores
+  arc       G3 with I/J offsets; .tsj arcs always sweep in the
+            increasing-angle direction of P(θ) = C + r·(cosθ, sinθ),
+            which IS g-code counter-clockwise
+
+Travel moves are laser-off G1s at the operator's travel feed rather
+than G0 rapids — the .tsj travel profile is a contract, and rapids on
+this machine run at the (uncalibrated) max_rate. Burns use M4 dynamic
+laser power, not M3: call-response streaming starves the planner
+between lines, and M4 scales power with true speed and goes dark at
+standstill — a pause or a dropped link never parks a firing beam.
 
 hardware_available() probes the configured transport at call time —
 nothing is opened or enumerated at import, so joining the hotspot (or
@@ -26,6 +39,7 @@ plugging in the USB cable) after the server starts is fine.
 burn() is the single public entry point called by app/executor.py.
 """
 
+import math
 import socket
 import time
 from typing import Callable
@@ -265,57 +279,102 @@ def _send(ser, line: str):
 # ── Laser control ─────────────────────────────────────────────────────────────
 
 def _laser_on(ser, power_pct: int):
-    """Laser on at power_pct (0–100). Assumes the FluidNC spindle is
-    configured as a Laser (laser mode) so M3 only fires during motion —
-    which also means a dropped WiFi link mid-burn goes dark, not hot."""
+    """Laser on at power_pct (0–100), M4 dynamic power mode.
+
+    M4 (not M3) because the call-response sender starves the planner
+    between lines: M4 scales power with actual speed and turns the beam
+    off at standstill, so inter-line pauses and dropped links fail dark
+    instead of charring a parked spot. Requires the FluidNC spindle to
+    be configured as a Laser."""
     s = int(power_pct / 100 * config.GRBL_SPINDLE_MAX_S)
-    _send(ser, f"M3 S{s}")
+    _send(ser, f"M4 S{s}")
 
 
 def _laser_off(ser):
     _send(ser, "M5")
 
 
-# ── Entity burn stubs (to be implemented in next phase) ───────────────────────
+# ── Entity g-code emitters ────────────────────────────────────────────────────
+#
+# Every emitter follows the same bracket: laser-off travel to the mark,
+# M4, burn moves at the scribe feed, M5. Coordinates are rounded to
+# 0.0001" once and arc I/J offsets are derived from the ROUNDED values,
+# so GRBL's start/end-radius consistency check always passes.
+
+def _fmt(v: float) -> str:
+    v = round(v, 4) + 0.0     # + 0.0 normalizes -0.0
+    return f"{v:.4f}"
+
+
+def _travel(ser, x: float, y: float, travel: int):
+    """Laser-off move at the operator's travel feed (see module docs
+    for why this is a G1, not a G0 rapid)."""
+    _send(ser, f"G1 X{_fmt(x)} Y{_fmt(y)} F{travel}")
+
+
+def _stroke(ser, points, feed: int, power: int, travel: int):
+    """Travel to points[0], then burn G1s through the rest."""
+    _travel(ser, points[0][0], points[0][1], travel)
+    _laser_on(ser, power)
+    for x, y in points[1:]:
+        _send(ser, f"G1 X{_fmt(x)} Y{_fmt(y)} F{feed}")
+    _laser_off(ser)
+
 
 def _burn_line(ser, entity: dict, feed: int, power: int, travel: int):
-    """
-    Travel to line start, laser on, traverse to line end, laser off.
-    TODO: emit G0 travel → M3 → G1 feed → M5 via _send().
-    """
     start = entity.get("start", [0, 0])
     end   = entity.get("end",   [0, 0])
-    # ASCII only in console prints — Windows consoles choke on U+2192
-    print(f"  LINE ({start[0]:.3f},{start[1]:.3f}) -> "
-          f"({end[0]:.3f},{end[1]:.3f})")
+    _stroke(ser, [start, end], feed, power, travel)
 
 
 def _burn_polyline(ser, entity: dict, feed: int, power: int, travel: int):
-    """Burn each segment of the polyline in sequence.
-    TODO: G0 to first point → M3 → chained G1s → M5 via _send()."""
     pts    = entity.get("points", [])
     closed = entity.get("closed", False)
     if len(pts) < 2:
+        print("  polyline with <2 points - skipped")
         return
     if closed and pts[-1] != pts[0]:
-        pts = pts + [pts[0]]
-    print(f"  POLYLINE {len(pts)} pts, closed={closed}")
+        pts = pts + [pts[0]]      # spec: closing point is not repeated
+    _stroke(ser, pts, feed, power, travel)
 
 
 def _burn_circle(ser, entity: dict, feed: int, power: int, travel: int):
-    """Burn the centre cross first, then trace the circle outline.
-    TODO: G0/G1 for the cross, then a full-circle G2 via _send()."""
-    c = entity.get("center", [0, 0])
-    r = entity.get("radius_in", 0)
-    print(f"  CIRCLE centre ({c[0]:.3f},{c[1]:.3f}) r={r:.3f}")
+    """Peg bore: center cross first (the framer drills to it), then the
+    outline as a full-circle G3 from the 3 o'clock point."""
+    cx, cy = entity.get("center", [0, 0])
+    r      = entity.get("radius_in", 0)
+    if r <= 0:
+        print("  circle with radius <= 0 - skipped")
+        return
+    if entity.get("scribe_center", True):
+        _stroke(ser, [[cx - r, cy], [cx + r, cy]], feed, power, travel)
+        _stroke(ser, [[cx, cy - r], [cx, cy + r]], feed, power, travel)
+    sx, sy = cx + r, cy
+    _travel(ser, sx, sy, travel)
+    _laser_on(ser, power)
+    _send(ser, f"G3 X{_fmt(sx)} Y{_fmt(sy)} "
+               f"I{_fmt(round(cx, 4) - round(sx, 4))} J0.0000 F{feed}")
+    _laser_off(ser)
 
 
 def _burn_arc(ser, entity: dict, feed: int, power: int, travel: int):
-    """TODO: G0 to arc start → M3 → G2/G3 (by sweep direction) → M5
-    via _send()."""
-    c     = entity.get("center", [0, 0])
-    r     = entity.get("radius_in", 0)
-    start = entity.get("start_angle_deg", 0)
-    end   = entity.get("end_angle_deg",   0)
-    print(f"  ARC centre ({c[0]:.3f},{c[1]:.3f}) r={r:.3f} "
-          f"{start:.1f} -> {end:.1f} deg")
+    """Arc sweep runs from start_angle to end_angle in the
+    increasing-angle direction of P(θ) = C + r·(cosθ, sinθ) — that is
+    g-code counter-clockwise, so always G3 (see TSJ_SPEC.md)."""
+    cx, cy = entity.get("center", [0, 0])
+    r      = entity.get("radius_in", 0)
+    sa     = math.radians(entity.get("start_angle_deg", 0))
+    ea     = math.radians(entity.get("end_angle_deg",   0))
+    if r <= 0:
+        print("  arc with radius <= 0 - skipped")
+        return
+    sx = round(cx + r * math.cos(sa), 4)
+    sy = round(cy + r * math.sin(sa), 4)
+    ex = round(cx + r * math.cos(ea), 4)
+    ey = round(cy + r * math.sin(ea), 4)
+    _travel(ser, sx, sy, travel)
+    _laser_on(ser, power)
+    _send(ser, f"G3 X{_fmt(ex)} Y{_fmt(ey)} "
+               f"I{_fmt(round(cx, 4) - sx)} J{_fmt(round(cy, 4) - sy)} "
+               f"F{feed}")
+    _laser_off(ser)

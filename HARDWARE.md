@@ -215,7 +215,7 @@ Bench state as of 2026-07-18:
 | WiFi mode | AP (hotspot) — SSID **FluidNC**, password **12345678** (FluidNC defaults), address `192.168.4.1` — moved off the default `192.168.0.1`, which collided with the shop LAN (`$AP/IP=192.168.4.1`, stored on the board, **not** in config.yaml); matches `config.py` `GRBL_AP_SSID` / `GRBL_HOST` | ✓ boot log |
 | G-code port | TCP 23 — "Telnet started on port 23" | ✓ boot log |
 | Protocol | TimberScribe preamble `G20`/`G90`/`M5` acknowledged, status Idle | ✓ over USB |
-| Spindle | **Laser** on gpio.32 at 5 kHz — laser mode, so the beam only fires during motion; a dropped WiFi link mid-burn stops motion and the beam goes dark | ✓ in config; **bench check owed once wired: beam dark whenever motion stops** |
+| Spindle | **Laser** on gpio.32 at 5 kHz. Burns use **M4 dynamic power**: the beam scales with actual speed and turns off at standstill, so streaming pauses and dropped links fail dark, never parked-and-firing | ✓ in config; **bench check owed once wired: beam dark whenever motion stops** |
 | S-value scale | laser `speed_map` tops at 1000 = `config.py GRBL_SPINDLE_MAX_S` | ✓ |
 | Homing | Y (gantry → datum edge) then X (bridge → anchor end), zero at the switch + 2 mm pulloff, detuned speeds | ✓ in config; **test owed once switches are wired** (§4) |
 | Steps/mm, travels | donor values in the config | calibrate at wiring (§4 port map) |
