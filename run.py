@@ -1,14 +1,15 @@
 """
 TimberScribe Flask server entry point.
 
-Run on the shop laptop (joined to the sled's WiFi hotspot):
+Run on the shop server — a plugged-in Raspberry Pi (see README /
+deploy/) or any laptop on the same network as the sled:
     python run.py
 
 Or with auto-reload during development:
     flask --app run:app run --debug --host 0.0.0.0 --port 5000
 
 The server listens on all interfaces so a phone on the same network
-can reach it at http://<laptop-ip>:5000. G-code goes to the sled's
+can reach it at http://<server-ip>:5000. G-code goes to the sled's
 DLC32 controller over WiFi (see config.py GRBL_* settings).
 """
 

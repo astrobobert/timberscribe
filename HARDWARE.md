@@ -220,10 +220,14 @@ Bench state as of 2026-07-18:
 | Homing | Y (gantry → datum edge) then X (bridge → anchor end), zero at the switch + 2 mm pulloff, detuned speeds | ✓ in config; **test owed once switches are wired** (§4) |
 | Steps/mm, travels | donor values in the config | calibrate at wiring (§4 port map) |
 
-The board's own FluidNC web page (at `http://192.168.4.1` when joined to
-the hotspot) can upload a g-code file to the SD card and run it from
-there — a useful fallback that keeps burning even if WiFi drops
-mid-job.
+The board's own FluidNC web page (`http://192.168.4.1` on the hotspot,
+`http://fluidnc.local` on the shop LAN) is also the **jog and home
+surface** (touch-friendly — drive it from the phone), and can upload a
+g-code file to the SD card and run it from there — the field workflow:
+export with TimberScribe's **Export .gcode** button (or
+`export_gcode.py`), upload from the phone, run from the card. A card
+run keeps burning even if WiFi drops mid-job. Card: 4–16 GB, FAT32
+(manual §IV).
 
 ## 5. Safety
 

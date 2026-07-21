@@ -84,6 +84,11 @@
       <span id="footer-status" class="footer-status">
         Face {{ selected }} selected
       </span>
+      <a class="btn btn-sm"
+         href="{{ url_for('main.download_gcode', job_id=job['id']) }}"
+         title="Download this face as .gcode for the controller's SD card (field mode)">
+        Export .gcode &#8595;
+      </a>
       <button type="submit" class="btn btn-primary btn-print"
               id="print-btn">
         Print face {{ selected }} &#8599;

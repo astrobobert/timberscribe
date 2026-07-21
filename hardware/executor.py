@@ -36,7 +36,9 @@ hardware_available() probes the configured transport at call time —
 nothing is opened or enumerated at import, so joining the hotspot (or
 plugging in the USB cable) after the server starts is fine.
 
-burn() is the single public entry point called by app/executor.py.
+burn() streams a job live (called by app/executor.py); gcode_program()
+renders the identical program as a list of lines for .gcode export
+(SD-card / field runs).
 """
 
 import math
@@ -104,44 +106,65 @@ def burn(
             status_cb(msg)
         print(f"[burn] {msg}")
 
-    ser = _connect(log)
+    link = _connect(log)
+
+    def emit(line: str):
+        _send(link, line)
+
+    completed = False
     try:
-        # Preamble: inches, absolute coordinates.
-        # TODO: confirm units/modes against the FluidNC config.
-        _send(ser, "G20")
-        _send(ser, "G90")
-        _laser_off(ser)
-
-        n = len(entities)
-        log(f"Starting burn — {n} entities, "
+        log(f"Starting burn — {len(entities)} entities, "
             f"{feed_in_per_min} in/min, {laser_power_pct}% power")
-
-        for i, entity in enumerate(entities, 1):
-            t = entity.get("type", "")
-            log(f"Entity {i}/{n}: {t}")
-
-            if t == "line":
-                _burn_line(ser, entity, feed_in_per_min, laser_power_pct,
-                           travel_in_per_min)
-            elif t == "polyline":
-                _burn_polyline(ser, entity, feed_in_per_min, laser_power_pct,
-                               travel_in_per_min)
-            elif t == "circle":
-                _burn_circle(ser, entity, feed_in_per_min, laser_power_pct,
-                             travel_in_per_min)
-            elif t == "arc":
-                _burn_arc(ser, entity, feed_in_per_min, laser_power_pct,
-                          travel_in_per_min)
-            else:
-                log(f"  Unknown entity type '{t}' — skipped")
-
+        _emit_program(emit, entities, feed_in_per_min, laser_power_pct,
+                      travel_in_per_min, log)
+        completed = True
         log("Burn complete")
-
     finally:
         try:
-            _laser_off(ser)
+            if not completed:
+                _laser_off(emit)   # interrupted mid-program — force beam off
         finally:
-            ser.close()
+            link.close()
+
+
+def gcode_program(
+    entities:          list[dict],
+    feed_in_per_min:   int,
+    laser_power_pct:   int,
+    travel_in_per_min: int,
+    log: Callable[[str], None] | None = None,
+) -> list[str]:
+    """The complete burn as a list of g-code lines — line-for-line what
+    a streamed burn sends. Used by the .gcode export (SD-card / field
+    runs, where the board burns from its own card with no server)."""
+    lines: list[str] = []
+    _emit_program(lines.append, entities, feed_in_per_min,
+                  laser_power_pct, travel_in_per_min, log)
+    return lines
+
+
+def _emit_program(emit, entities, feed, power, travel, log=None):
+    """Emit the full program through `emit`: preamble, every entity's
+    moves (each bracketed by its own M4/M5), nothing after — every
+    entity emitter ends laser-off."""
+    note = log or (lambda msg: None)
+    emit("G20")   # inches
+    emit("G90")   # absolute coordinates
+    _laser_off(emit)
+    n = len(entities)
+    for i, entity in enumerate(entities, 1):
+        t = entity.get("type", "")
+        note(f"Entity {i}/{n}: {t}")
+        if t == "line":
+            _burn_line(emit, entity, feed, power, travel)
+        elif t == "polyline":
+            _burn_polyline(emit, entity, feed, power, travel)
+        elif t == "circle":
+            _burn_circle(emit, entity, feed, power, travel)
+        elif t == "arc":
+            _burn_arc(emit, entity, feed, power, travel)
+        else:
+            note(f"  Unknown entity type '{t}' — skipped")
 
 
 # ── Transport / GRBL plumbing ─────────────────────────────────────────────────
@@ -278,7 +301,7 @@ def _send(ser, line: str):
 
 # ── Laser control ─────────────────────────────────────────────────────────────
 
-def _laser_on(ser, power_pct: int):
+def _laser_on(emit, power_pct: int):
     """Laser on at power_pct (0–100), M4 dynamic power mode.
 
     M4 (not M3) because the call-response sender starves the planner
@@ -287,11 +310,11 @@ def _laser_on(ser, power_pct: int):
     instead of charring a parked spot. Requires the FluidNC spindle to
     be configured as a Laser."""
     s = int(power_pct / 100 * config.GRBL_SPINDLE_MAX_S)
-    _send(ser, f"M4 S{s}")
+    emit(f"M4 S{s}")
 
 
-def _laser_off(ser):
-    _send(ser, "M5")
+def _laser_off(emit):
+    emit("M5")
 
 
 # ── Entity g-code emitters ────────────────────────────────────────────────────
@@ -306,28 +329,28 @@ def _fmt(v: float) -> str:
     return f"{v:.4f}"
 
 
-def _travel(ser, x: float, y: float, travel: int):
+def _travel(emit, x: float, y: float, travel: int):
     """Laser-off move at the operator's travel feed (see module docs
     for why this is a G1, not a G0 rapid)."""
-    _send(ser, f"G1 X{_fmt(x)} Y{_fmt(y)} F{travel}")
+    emit(f"G1 X{_fmt(x)} Y{_fmt(y)} F{travel}")
 
 
-def _stroke(ser, points, feed: int, power: int, travel: int):
+def _stroke(emit, points, feed: int, power: int, travel: int):
     """Travel to points[0], then burn G1s through the rest."""
-    _travel(ser, points[0][0], points[0][1], travel)
-    _laser_on(ser, power)
+    _travel(emit, points[0][0], points[0][1], travel)
+    _laser_on(emit, power)
     for x, y in points[1:]:
-        _send(ser, f"G1 X{_fmt(x)} Y{_fmt(y)} F{feed}")
-    _laser_off(ser)
+        emit(f"G1 X{_fmt(x)} Y{_fmt(y)} F{feed}")
+    _laser_off(emit)
 
 
-def _burn_line(ser, entity: dict, feed: int, power: int, travel: int):
+def _burn_line(emit, entity: dict, feed: int, power: int, travel: int):
     start = entity.get("start", [0, 0])
     end   = entity.get("end",   [0, 0])
-    _stroke(ser, [start, end], feed, power, travel)
+    _stroke(emit, [start, end], feed, power, travel)
 
 
-def _burn_polyline(ser, entity: dict, feed: int, power: int, travel: int):
+def _burn_polyline(emit, entity: dict, feed: int, power: int, travel: int):
     pts    = entity.get("points", [])
     closed = entity.get("closed", False)
     if len(pts) < 2:
@@ -335,10 +358,10 @@ def _burn_polyline(ser, entity: dict, feed: int, power: int, travel: int):
         return
     if closed and pts[-1] != pts[0]:
         pts = pts + [pts[0]]      # spec: closing point is not repeated
-    _stroke(ser, pts, feed, power, travel)
+    _stroke(emit, pts, feed, power, travel)
 
 
-def _burn_circle(ser, entity: dict, feed: int, power: int, travel: int):
+def _burn_circle(emit, entity: dict, feed: int, power: int, travel: int):
     """Peg bore: center cross first (the framer drills to it), then the
     outline as a full-circle G3 from the 3 o'clock point."""
     cx, cy = entity.get("center", [0, 0])
@@ -347,17 +370,17 @@ def _burn_circle(ser, entity: dict, feed: int, power: int, travel: int):
         print("  circle with radius <= 0 - skipped")
         return
     if entity.get("scribe_center", True):
-        _stroke(ser, [[cx - r, cy], [cx + r, cy]], feed, power, travel)
-        _stroke(ser, [[cx, cy - r], [cx, cy + r]], feed, power, travel)
+        _stroke(emit, [[cx - r, cy], [cx + r, cy]], feed, power, travel)
+        _stroke(emit, [[cx, cy - r], [cx, cy + r]], feed, power, travel)
     sx, sy = cx + r, cy
-    _travel(ser, sx, sy, travel)
-    _laser_on(ser, power)
-    _send(ser, f"G3 X{_fmt(sx)} Y{_fmt(sy)} "
-               f"I{_fmt(round(cx, 4) - round(sx, 4))} J0.0000 F{feed}")
-    _laser_off(ser)
+    _travel(emit, sx, sy, travel)
+    _laser_on(emit, power)
+    emit(f"G3 X{_fmt(sx)} Y{_fmt(sy)} "
+         f"I{_fmt(round(cx, 4) - round(sx, 4))} J0.0000 F{feed}")
+    _laser_off(emit)
 
 
-def _burn_arc(ser, entity: dict, feed: int, power: int, travel: int):
+def _burn_arc(emit, entity: dict, feed: int, power: int, travel: int):
     """Arc sweep runs from start_angle to end_angle in the
     increasing-angle direction of P(θ) = C + r·(cosθ, sinθ) — that is
     g-code counter-clockwise, so always G3 (see TSJ_SPEC.md)."""
@@ -372,9 +395,9 @@ def _burn_arc(ser, entity: dict, feed: int, power: int, travel: int):
     sy = round(cy + r * math.sin(sa), 4)
     ex = round(cx + r * math.cos(ea), 4)
     ey = round(cy + r * math.sin(ea), 4)
-    _travel(ser, sx, sy, travel)
-    _laser_on(ser, power)
-    _send(ser, f"G3 X{_fmt(ex)} Y{_fmt(ey)} "
-               f"I{_fmt(round(cx, 4) - sx)} J{_fmt(round(cy, 4) - sy)} "
-               f"F{feed}")
-    _laser_off(ser)
+    _travel(emit, sx, sy, travel)
+    _laser_on(emit, power)
+    emit(f"G3 X{_fmt(ex)} Y{_fmt(ey)} "
+         f"I{_fmt(round(cx, 4) - sx)} J{_fmt(round(cy, 4) - sy)} "
+         f"F{feed}")
+    _laser_off(emit)

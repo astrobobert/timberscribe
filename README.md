@@ -7,12 +7,15 @@ centers, labels — directly onto the wood. The joints themselves are still cut 
 hand with traditional tools: the laser replaces tape-measure layout, not
 craftsmanship.
 
-This repository is the web server that drives the print head. It runs on any
-laptop joined to the sled's WiFi hotspot, accepts `.tsj` job files from the
-framer's phone or laptop, shows a face preview dialog, and streams g-code
-over WiFi to the sled's GRBL controller (an MKS DLC32 V2.2 running
-[FluidNC](https://github.com/bdring/FluidNC) — the controller hosts the hotspot, so
-nothing rides the sled but the controller itself).
+This repository is the web server that drives the print head. It runs on a
+shop server — a plugged-in Raspberry Pi or any laptop on the same network as
+the sled — accepts `.tsj` job files from the framer's phone, shows a face
+preview dialog, and streams g-code over WiFi to the sled's GRBL controller
+(an MKS DLC32 V2.2 running
+[FluidNC](https://github.com/bdring/FluidNC); nothing rides the sled but the
+controller itself). It also exports `.gcode` files for running from the
+controller's SD card when there's no server around — see "Two ways to run a
+burn" below.
 
 `.tsj` jobs are produced by the [TimberDraw](https://github.com/astrobobert/timberdraw)
 AutoCAD plugin's scribe export (`TScribe` / `TScribeAll`) — one file per timber face,
@@ -23,38 +26,64 @@ assembly — is covered in [HARDWARE.md](HARDWARE.md).
 
 ---
 
-## Setup
+## Two ways to run a burn
 
-On the machine that will run the server (the shop laptop):
+**Shop mode (streamed):** the sled joins the shop WiFi (FluidNC station
+mode), this server runs on a machine on the same network — a plugged-in
+Raspberry Pi (below) or any laptop — and your phone drives the web UI:
+upload, preview, adjust, print. G-code streams live to the controller
+at `fluidnc.local` (TCP 23), with per-entity status on the phone.
+
+**Field mode (SD card):** out of router range the sled automatically
+falls back to broadcasting its own hotspot, and no server is needed at
+all. Export a `.gcode` file ahead of time — the **Export .gcode**
+button on the face page, or `python export_gcode.py <file.tsj>` — get
+it onto your phone, join the sled's hotspot, upload the file to the
+controller's SD card through the board's own web page, and run it from
+there. A card-run burn doesn't need WiFi once started. (The card:
+4–16 GB, FAT32.)
+
+Firmware flashing, WiFi setup, and homing are covered in
+[HARDWARE.md](HARDWARE.md) §4. A bench fallback over USB serial also
+exists: set `GRBL_TRANSPORT = "serial"` and `SERIAL_PORT` in
+`config.py` and plug the DLC32 into USB.
+
+## Setup (any server machine)
 
 ```bash
 cd TimberScribe
 python -m venv .venv
 source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-```
-
-Power the sled and join this machine to the controller's WiFi hotspot
-(FluidNC AP mode — SSID and address in `config.py`: `GRBL_AP_SSID`,
-`GRBL_HOST`). Firmware flashing and hotspot configuration are covered in
-[HARDWARE.md](HARDWARE.md) §4.
-
-Run the server:
-```bash
 python run.py
 ```
 
-Open on a phone joined to the same hotspot:
+Open on a phone on the same network:
 ```
-http://<laptop-ip>:5000
+http://<server-ip>:5000
 ```
 
-> Note: while joined to the sled's hotspot the laptop has no internet —
-> that's normal at the sawhorses.
+## Shop server on a Raspberry Pi
 
-A bench fallback over USB serial still exists: set
-`GRBL_TRANSPORT = "serial"` and `SERIAL_PORT` in `config.py` and plug the
-DLC32 into USB.
+A Pi plugged in on the shop network makes the server an appliance — no
+laptop in the workflow. One-time setup on the Pi:
+
+```bash
+git clone https://github.com/astrobobert/timberscribe.git ~/TimberScribe
+cd ~/TimberScribe
+python -m venv .venv
+.venv/bin/pip install -r requirements.txt
+
+# Start on every boot:
+sed "s|USER|$(whoami)|g" deploy/timberscribe.service | \
+  sudo tee /etc/systemd/system/timberscribe.service
+sudo systemctl enable --now timberscribe
+```
+
+Then browse to `http://<pi-ip>:5000` from the phone — give the Pi a
+reserved address in the router and bookmark it. `fluidnc.local`
+resolution works out of the box on Raspberry Pi OS (avahi). Logs:
+`journalctl -u timberscribe -f`.
 
 ---
 

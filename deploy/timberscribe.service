@@ -1,0 +1,24 @@
+# TimberScribe shop server — systemd unit for the Raspberry Pi.
+#
+# Install (see README "Shop server on a Raspberry Pi"):
+#   sed "s|USER|$(whoami)|g" deploy/timberscribe.service | \
+#     sudo tee /etc/systemd/system/timberscribe.service
+#   sudo systemctl enable --now timberscribe
+#
+# The server then starts on every boot — plug the Pi in and it serves.
+
+[Unit]
+Description=TimberScribe laser print head server
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=USER
+WorkingDirectory=/home/USER/TimberScribe
+ExecStart=/home/USER/TimberScribe/.venv/bin/python run.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

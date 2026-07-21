@@ -15,7 +15,7 @@ Endpoints:
 import os
 import uuid
 from flask import (
-    Blueprint, render_template, request, redirect,
+    Blueprint, Response, render_template, request, redirect,
     url_for, flash, jsonify, current_app
 )
 from werkzeug.utils import secure_filename
@@ -166,8 +166,42 @@ def print_job(job_id: str):
     from app.executor import start_print
     start_print(job_id)
 
-    flash("Print job queued — press the button on the print head to start.", "success")
+    flash("Print job queued — burn starting.", "success")
     return redirect(url_for("main.face_select", job_id=job_id))
+
+
+@bp.route("/job/<job_id>/gcode")
+def download_gcode(job_id: str):
+    """Download the job as a .gcode file — for running from the
+    controller's SD card (field mode, no server at the timber). Uses
+    the job's operator-adjusted feed/power so the file burns exactly
+    like a streamed print would."""
+    row = job_store.get_job(job_id)
+    if row is None:
+        flash("Job not found.", "error")
+        return redirect(url_for("main.index"))
+
+    try:
+        tsj = tsj_parser.load(row["tsj_path"])
+    except tsj_parser.TsjError as e:
+        flash(f"Could not read job file: {e}", "error")
+        return redirect(url_for("main.index"))
+
+    from hardware.executor import gcode_program
+    lines = gcode_program(
+        tsj.entities,
+        row["feed_in_per_min"] or tsj.feed_in_per_min,
+        row["laser_power_pct"] or tsj.laser_power_pct,
+        tsj.travel_in_per_min,
+    )
+    stem = os.path.splitext(row["filename"])[0]
+    return Response(
+        "\n".join(lines) + "\n",
+        mimetype="text/plain",
+        headers={
+            "Content-Disposition": f'attachment; filename="{stem}.gcode"'
+        },
+    )
 
 
 # ── Job management ────────────────────────────────────────────────────────────
